@@ -116,7 +116,7 @@ Create the script that Waybar will execute to get the PWD and Git information.
             fi
         fi
 
-        echo "{"text": "$USER î¸• $display<span color='#9a9a9a'>$FINALBRANCH</span>", "tooltip": "$cwd", "class": "terminal"}"
+        echo "{"text": "$USER # $display<span color='#9a9a9a'>$FINALBRANCH</span>", "tooltip": "$cwd", "class": "terminal"}"
     else
         DAY=$(date +%A)
         TIME=$(date +%H:%M:%S)
