@@ -23,7 +23,7 @@ To ensure that each new terminal window opens as a new instance (which is necess
 You need to modify your Hyprland keybinding to launch Ghostty directly.
 
 1.  Open your Hyprland bindings configuration file (e.g., `~/.config/hypr/bindings.conf`).
-2.  Unbind your existing terminal keybinding and rebind it to use `uwsm-app` and `omarchy-cmd-terminal-cwd`:
+2.  Unbind your existing terminal keybinding and rebind it to use `uwsm-app -- ghostty --working-directory="$(omarchy-cmd-terminal-cwd)"`:
 
     ```
     unbind = SUPER, RETURN
