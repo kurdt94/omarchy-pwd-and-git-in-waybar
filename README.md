@@ -1,11 +1,11 @@
-
 # Guide: Display current Working Directory with GIT status in Waybar for Omarchy + Ghostty
 
-This guide provides a tutorial on how to configure Waybar to display the current working directory (PWD) of the active Ghostty terminal. This setup also includes Git integration, showing branch and status.
+A guide on how to configure Waybar to display the current working directory (PWD) of your active Ghostty window. This setup also includes Git integration, showing branch and status, it is optional to use event-driven updates via socket signals.
 
 ## Prerequisites
 
-- This tutorial is written for Omarchy users only. If you are not running omarchy, you will need to find a solution to replace omarchy-cmd-terminal-cwd.
+- This tutorial is written for Omarchy users. If you are not running omarchy, you will need to find a workaround solution for omarchy-cmd-terminal-cwd.
+- Have Python installed
 
 ## Step 1: Configure Ghostty
 
@@ -32,29 +32,7 @@ You need to modify your Hyprland keybinding to launch Ghostty directly.
 
     Replace `SUPER, RETURN` with your preferred key combination for opening a terminal.
 
-## Step 3: Configure Waybar
-
-Now, we'll add a custom module to the Waybar configuration to display PWD.
-
-1.  Open your Waybar configuration file (e.g., `~/.config/waybar/config.jsonc`).
-2.  Add the following custom module:
-
-    ```json
-    "custom/pwd": {
-        "format": "{}",
-        "exec": "~/.config/waybar/scripts/waybar_pwd.sh",
-        "interval": 1,
-        "return-type": "json"
-    },
-    ```
-
-3.  Enable the module by adding `"custom/pwd"` to your desired module location (e.g., `modules-center`):
-
-    ```json
-    "modules-center": ["custom/pwd", "..."],
-    ```
-
-## Step 4: Create the Waybar Script
+## Step 3: Create the Waybar Script
 
 Create the script that Waybar will execute to get the PWD and Git information.
 
@@ -124,6 +102,74 @@ Create the script that Waybar will execute to get the PWD and Git information.
     fi
     ```
 
-## End 
+## Step 4: Configure Waybar
 
-Your Waybar should now display the current working directory of your Ghostty terminal. When you are not in a terminal, it will fall back to showing the current day and time.
+Now, we'll add a custom module to the Waybar configuration to display PWD.
+
+1.  Open your Waybar configuration file (e.g., `~/.config/waybar/config.jsonc`).
+2.  Add the following custom module:
+
+    ```json
+    "custom/pwd": {
+        "format": "{}",
+        "exec": "~/.config/waybar/scripts/waybar_pwd.sh",
+        "interval": 1,
+        "return-type": "json",
+        "signal": 13
+    },
+    ```
+
+3.  Enable the module by adding `"custom/pwd"` to your desired module location (e.g., `modules-center`):
+
+    ```json
+    "modules-center": ["custom/pwd", "..."],
+    ```
+
+## Step 5: Enable the Module
+
+Restart Waybar to apply the changes (e.g., `hyprctl reload` or restart Hyprland).
+
+## Step 6: Create Socket Listener and Configure Autostart
+
+To enable event-driven updates, create a Python script that listens to Hyprland's socket and signals Waybar on window changes.
+
+1.  Create a new file named `watcher.py` in your Waybar scripts directory (e.g., `~/.config/waybar/scripts/watcher.py`).
+2.  Add the following content to the script:
+
+    ```python
+    import socket
+    import os
+    import subprocess
+
+    def refresh_waybar_module(signal_num):
+        # Sends SIGRTMIN + signal_num to all Waybar instances
+        subprocess.run(["pkill", f"-RTMIN+{signal_num}", "waybar"])
+
+    # Get the socket path
+    signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
+    socket_path = f"{runtime_dir}/hypr/{signature}/.socket2.sock"
+
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.connect(socket_path)
+
+    while True:
+        data = client.recv(1024).decode("utf-8")
+        for line in data.split("\n"):
+            if "activewindowv2" in line:
+                # refresh_waybar_module with signal
+                refresh_waybar_module(13)
+    ```
+
+3.  Open your Hyprland configuration file (e.g., `~/.config/hypr/hyprland.conf`).
+4.  Add the following line to the configuration to start the script automatically on Hyprland startup:
+
+    ```
+    exec-once = python ~/.config/waybar/scripts/watcher.py
+    ```
+
+5.  Restart Hyprland to apply the changes and start the watcher script.
+
+## End
+
+Your Waybar should now display the current working directory of your Ghostty terminal with Git status, updating both on a 1-second interval (for clock simulation) and immediately on window changes via socket signals. When you are not in a terminal, it will fall back to showing the current day and time.
