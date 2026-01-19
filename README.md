@@ -69,7 +69,16 @@ Create the script that Waybar will execute to get the PWD and Git information.
         if git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
             # 1. Get Branch Name
             BRANCH=$(git -C "$cwd" branch --show-current 2>/dev/null || git -C "$cwd" rev-parse --short HEAD 2>/dev/null || echo "")
+            
+            if [[ -z "$BRANCH" ]]; then
+              # Detached, .. tag name? otherwise get the SHA
+              BRANCH=$(git -C "$cwd" describe --tags --exact-match 2>/dev/null \
+                        || git -C "$cwd" rev-parse --short HEAD 2>/dev/null)
 
+              # Wrap in parens to show we are detached
+              BRANCH="($BRANCH)"
+            fi
+            
             # 2. Get Git Status Indicators
             # --porcelain is stable for scripting.
             # Column 1 = Staged, Column 2 = Unstaged/Modified
