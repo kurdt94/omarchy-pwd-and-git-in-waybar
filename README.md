@@ -1,4 +1,5 @@
-# Guide: Display current Working Directory with GIT status in Waybar for Omarchy + Ghostty
+# Guide for Omarchy ( + Ghostty ) 
+# Show current Working Directory with GIT status in Waybar 
 
 A guide on how to configure Waybar to display the current working directory (PWD) of your active Ghostty window. This setup also includes Git integration, showing branch and status, it is optional to use event-driven updates via socket signals.
 
